@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
+import DpsCalculator from './components/DpsCalculator';
 import RoundTable from './components/RoundTable';
 import Phase4Guide from './components/Phase4Guide';
 import { ExternalLink } from 'lucide-react';
@@ -8,6 +9,7 @@ export default function App() {
   const [phase, setPhase] = useState(2); // Default to Phase 2
   const [stasis, setStasis] = useState(2);
   const [groupSize, setGroupSize] = useState(6);
+  const [showFullTable, setShowFullTable] = useState(false);
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px' }}>
@@ -27,15 +29,33 @@ export default function App() {
         {/* Phase 4 Special Guide Banner if Phase 4 is selected */}
         {phase === 4 && <Phase4Guide />}
 
-        {/* HERO FEATURE: All-in-One Round Positioning Table */}
-        <RoundTable phase={phase} groupSize={groupSize} />
+        {/* HERO FEATURE: Posicionador Placement for DPS 1 & DPS 2 */}
+        <DpsCalculator phase={phase} groupSize={groupSize} />
+
+        {/* Secondary Toggle: Show Full Group Table */}
+        {phase !== 4 && (
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <button
+              onClick={() => setShowFullTable(!showFullTable)}
+              className="glass-button"
+              style={{ padding: '8px 18px', fontSize: '0.88rem' }}
+            >
+              {showFullTable ? '▲ Ocultar Tabla de la Ronda Completa' : '▼ Ver Tabla Completa para todos los Integrantes (Soportes & Posicionador)'}
+            </button>
+          </div>
+        )}
+
+        {/* Full Table */}
+        {showFullTable && phase !== 4 && (
+          <RoundTable phase={phase} groupSize={groupSize} />
+        )}
       </main>
 
       {/* Footer */}
       <footer className="glass-panel" style={{ padding: '16px 24px', textAlign: 'center', marginTop: '32px' }}>
         <div style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
           <span>
-            Wakfu MMORPG — Tabla de Posicionamiento para <strong>Timö, o Possuído (Lvl 248)</strong>
+            Wakfu MMORPG — Calculadora de Posicionamiento DPS para <strong>Timö, o Possuído (Lvl 248)</strong>
           </span>
           <span>•</span>
           <a 
