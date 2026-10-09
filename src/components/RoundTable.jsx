@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { ELEMENTS, PHASE3_STATES, COUNTER_MAP, ELEMENT_MAP, SUPREME_SPELLS, getTimoStateAfterAdvances } from '../utils/timoLogic';
 import { Shield, Zap, AlertTriangle, Sparkles, CheckCircle2, User } from 'lucide-react';
 
+const PLAYER_ROLES = [
+  { num: 1, name: 'Soporte 1', badge: 'S1', color: '#38bdf8' },
+  { num: 2, name: 'Soporte 2', badge: 'S2', color: '#38bdf8' },
+  { num: 3, name: 'Soporte 3', badge: 'S3', color: '#38bdf8' },
+  { num: 4, name: 'Posicionador', badge: 'POS', color: '#c084fc' },
+  { num: 5, name: 'DPS 1', badge: 'DPS1', color: '#f43f5e' },
+  { num: 6, name: 'DPS 2', badge: 'DPS2', color: '#f43f5e' },
+];
+
 export default function RoundTable({ phase, groupSize = 6 }) {
   const [selectedElementId, setSelectedElementId] = useState('fire'); // Phase 1 & 2 default
   const [selectedP3Index, setSelectedP3Index] = useState(0); // Phase 3 default (Normal Fire)
@@ -32,6 +41,7 @@ export default function RoundTable({ phase, groupSize = 6 }) {
   // Calculate table rows for each player (1 to groupSize)
   const playersRows = Array.from({ length: groupSize }, (_, i) => {
     const playerNum = i + 1;
+    const roleInfo = PLAYER_ROLES[i] || { name: `Jugador ${playerNum}`, badge: `J${playerNum}`, color: '#38bdf8' };
     
     // Advances from start of round when Timö starts turn 0:
     // In Phase 1: 0 advances during players' turns
@@ -65,6 +75,7 @@ export default function RoundTable({ phase, groupSize = 6 }) {
 
     return {
       playerNum,
+      roleInfo,
       advances,
       timoState,
       counterElement,
@@ -72,15 +83,12 @@ export default function RoundTable({ phase, groupSize = 6 }) {
     };
   });
 
-  // --- ULTIMATE SPELL CALCULATION ---
-  // Current Round Ultimate: Timö uses the spell of the element he starts on!
-  const currentRoundTimoState = getTimoStateAfterAdvances(selectedElementId, selectedP3Index, 0, phase);
+  // --- ULTIMATE SPELL CALCULATION FOR CURRENT ROUND ---
+  // Phase 1: same element (advances = 0)
+  // Phase 2 & 3: next element (advances = 1)
+  const ultimateAdvances = phase === 1 ? 0 : 1;
+  const currentRoundTimoState = getTimoStateAfterAdvances(selectedElementId, selectedP3Index, ultimateAdvances, phase);
   const currentUltimateSpell = SUPREME_SPELLS[currentRoundTimoState.baseElementId];
-
-  // Next Round Ultimate: Timö's state after all round advances
-  const advForUltimate = phase === 1 ? 1 : (groupSize + 1);
-  const nextRoundTimoState = getTimoStateAfterAdvances(selectedElementId, selectedP3Index, advForUltimate, phase);
-  const nextUltimateSpell = SUPREME_SPELLS[nextRoundTimoState.baseElementId];
 
   return (
     <div className="glass-panel animate-fade-in" style={{ padding: '28px', marginBottom: '24px' }}>
@@ -94,7 +102,7 @@ export default function RoundTable({ phase, groupSize = 6 }) {
           </h2>
         </div>
         <p style={{ fontSize: '0.88rem', color: '#94a3b8' }}>
-          Haz clic en el tótem de Timö al iniciar la ronda para ver la **tabla completa de posiciones** de los {groupSize} jugadores.
+          Haz clic en el tótem de Timö al iniciar la ronda para ver la **tabla completa de posiciones** de los integrantes del grupo.
         </p>
       </div>
 
@@ -164,91 +172,47 @@ export default function RoundTable({ phase, groupSize = 6 }) {
         </div>
       )}
 
-      {/* ULTIMATE SPELLS BANNER (CURRENT & NEXT ROUND) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '28px' }}>
-        
-        {/* CURRENT ROUND ULTIMATE */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.18) 0%, rgba(194, 65, 12, 0.28) 100%)',
-          borderRadius: '16px',
-          padding: '20px',
-          border: '1.5px solid rgba(249, 115, 22, 0.5)',
-          display: 'flex',
-          justify: 'space-between',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ background: 'rgba(249, 115, 22, 0.25)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.5)' }}>
-              <Zap size={26} color="#fb923c" />
-            </div>
-            <div>
-              <span style={{ fontSize: '0.75rem', color: '#fdba74', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
-                ULTIMATE EN ESTA RONDA (ACTUAL):
-              </span>
-              <strong style={{ fontSize: '1.25rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                ⚡ {currentUltimateSpell?.name} 
-                <span style={{ fontSize: '0.85rem', color: '#fdba74', fontWeight: 600 }}>({currentRoundTimoState.element.name})</span>
-              </strong>
-              <div style={{ fontSize: '0.8rem', color: '#ffedd5', marginTop: '3px' }}>
-                💡 {currentUltimateSpell?.advice}
-              </div>
+      {/* SINGLE HERO ULTIMATE BANNER (CURRENT ROUND) */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.18) 0%, rgba(194, 65, 12, 0.28) 100%)',
+        borderRadius: '16px',
+        padding: '20px',
+        border: '1.5px solid rgba(249, 115, 22, 0.5)',
+        marginBottom: '28px',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justify: 'space-between',
+        alignItems: 'center',
+        gap: '16px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 300px' }}>
+          <div style={{ background: 'rgba(249, 115, 22, 0.25)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.5)' }}>
+            <Zap size={28} color="#fb923c" />
+          </div>
+          <div>
+            <span style={{ fontSize: '0.78rem', color: '#fdba74', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '2px' }}>
+              ULTIMATE DE LA RONDA ACTUAL:
+            </span>
+            <strong style={{ fontSize: '1.35rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              ⚡ {currentUltimateSpell?.name} 
+              <span style={{ fontSize: '0.9rem', color: '#fdba74', fontWeight: 600 }}>({currentRoundTimoState.element.name})</span>
+            </strong>
+            <div style={{ fontSize: '0.85rem', color: '#ffedd5', marginTop: '4px' }}>
+              💡 <strong>Cómo esquivarlo:</strong> {currentUltimateSpell?.advice}
             </div>
           </div>
-
-          {currentUltimateSpell?.image && (
-            <div style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)', background: '#000', flexShrink: 0 }}>
-              <img 
-                src={currentUltimateSpell.image} 
-                alt={`Área de ${currentUltimateSpell.name}`}
-                style={{ maxHeight: '70px', maxWidth: '110px', objectFit: 'cover', display: 'block' }}
-                onError={(e) => { e.target.parentElement.style.display = 'none'; }}
-              />
-            </div>
-          )}
         </div>
 
-        {/* NEXT ROUND ULTIMATE */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(126, 34, 206, 0.25) 100%)',
-          borderRadius: '16px',
-          padding: '20px',
-          border: '1.5px solid rgba(168, 85, 247, 0.4)',
-          display: 'flex',
-          justify: 'space-between',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ background: 'rgba(168, 85, 247, 0.25)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.5)' }}>
-              <Zap size={26} color="#c084fc" />
-            </div>
-            <div>
-              <span style={{ fontSize: '0.75rem', color: '#e9d5ff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
-                ULTIMATE PRÓXIMA RONDA:
-              </span>
-              <strong style={{ fontSize: '1.25rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                ⚡ {nextUltimateSpell?.name} 
-                <span style={{ fontSize: '0.85rem', color: '#e9d5ff', fontWeight: 600 }}>({nextRoundTimoState.element.name})</span>
-              </strong>
-              <div style={{ fontSize: '0.8rem', color: '#f3e8ff', marginTop: '3px' }}>
-                💡 {nextUltimateSpell?.advice}
-              </div>
-            </div>
+        {currentUltimateSpell?.image && (
+          <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)', boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4)', background: '#000', flexShrink: 0 }}>
+            <img 
+              src={currentUltimateSpell.image} 
+              alt={`Área de ${currentUltimateSpell.name}`}
+              style={{ maxHeight: '100px', maxWidth: '180px', objectFit: 'cover', display: 'block' }}
+              onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+            />
           </div>
-
-          {nextUltimateSpell?.image && (
-            <div style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)', background: '#000', flexShrink: 0 }}>
-              <img 
-                src={nextUltimateSpell.image} 
-                alt={`Área de ${nextUltimateSpell.name}`}
-                style={{ maxHeight: '70px', maxWidth: '110px', objectFit: 'cover', display: 'block' }}
-                onError={(e) => { e.target.parentElement.style.display = 'none'; }}
-              />
-            </div>
-          )}
-        </div>
-
+        )}
       </div>
 
       {/* THE MAIN POSITIONING TABLE */}
@@ -256,10 +220,10 @@ export default function RoundTable({ phase, groupSize = 6 }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
           <thead>
             <tr style={{ background: 'rgba(30, 20, 48, 0.9)', color: '#c084fc', borderBottom: '2px solid rgba(192, 132, 252, 0.3)', fontSize: '0.88rem' }}>
-              <th style={{ padding: '14px 16px', width: '15%' }}>👤 Jugador</th>
-              <th style={{ padding: '14px 16px', width: '25%' }}>👑 Estado de Timö</th>
-              <th style={{ padding: '14px 16px', width: '25%' }}>🎯 Energía Necesaria</th>
-              <th style={{ padding: '14px 16px', width: '35%' }}>📍 Casilla donde DEBE quedar colocación</th>
+              <th style={{ padding: '14px 16px', width: '22%' }}>👤 Rol / Integrante</th>
+              <th style={{ padding: '14px 16px', width: '23%' }}>👑 Estado de Timö</th>
+              <th style={{ padding: '14px 16px', width: '23%' }}>🎯 Energía Necesaria</th>
+              <th style={{ padding: '14px 16px', width: '32%' }}>📍 Casilla donde DEBE quedar colocación</th>
             </tr>
           </thead>
           <tbody>
@@ -274,15 +238,15 @@ export default function RoundTable({ phase, groupSize = 6 }) {
                     transition: 'background 0.2s ease'
                   }}
                 >
-                  {/* Player Column */}
+                  {/* Player Role Column */}
                   <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ background: 'rgba(56, 189, 248, 0.15)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#38bdf8', fontSize: '0.9rem' }}>
-                        J{row.playerNum}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ background: `${row.roleInfo.color}25`, border: `1px solid ${row.roleInfo.color}60`, minWidth: '40px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: row.roleInfo.color, fontSize: '0.8rem', padding: '0 6px' }}>
+                        {row.roleInfo.badge}
                       </div>
                       <div>
-                        <strong style={{ color: '#f8fafc', fontSize: '0.95rem' }}>Jugador {row.playerNum}</strong>
-                        {phase !== 1 && <span style={{ display: 'block', fontSize: '0.72rem', color: '#64748b' }}>({row.advances} Avances)</span>}
+                        <strong style={{ color: '#f8fafc', fontSize: '0.98rem' }}>{row.roleInfo.name}</strong>
+                        <span style={{ display: 'block', fontSize: '0.72rem', color: '#94a3b8' }}>Turno {row.playerNum} {phase !== 1 ? `(${row.advances} Avances)` : ''}</span>
                       </div>
                     </div>
                   </td>
