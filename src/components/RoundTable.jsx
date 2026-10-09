@@ -66,7 +66,7 @@ export default function RoundTable({ phase, groupSize = 6 }) {
       if (tileIdx < 0) tileIdx += 4;
       tileNow = ELEMENTS[tileIdx];
     } else if (phase === 3) {
-      // Must land on non-cursed counter state
+      // Must land on non-cursed counter state (Fire=0, Water=2, Earth=4, Air=6)
       const reqP3Idx = PHASE3_STATES.findIndex(s => s.baseElement === counterId && !s.isCursed);
       let tileP3Idx = (reqP3Idx - advances) % 8;
       if (tileP3Idx < 0) tileP3Idx += 8;
@@ -84,9 +84,10 @@ export default function RoundTable({ phase, groupSize = 6 }) {
   });
 
   // --- ULTIMATE SPELL CALCULATION FOR CURRENT ROUND ---
-  // Phase 1: same element (advances = 0)
-  // Phase 2 & 3: next element (advances = 1)
-  const ultimateAdvances = phase === 1 ? 0 : 1;
+  // Phase 1: 0 advances (uses current starting element)
+  // Phase 2: 7 advances per round (groupSize + 1)
+  // Phase 3: 7 advances over 8 states (groupSize + 1) -> e.g. Fogo (0) -> Air Maldito (7) -> Tempestade
+  const ultimateAdvances = phase === 1 ? 0 : (groupSize + 1);
   const currentRoundTimoState = getTimoStateAfterAdvances(selectedElementId, selectedP3Index, ultimateAdvances, phase);
   const currentUltimateSpell = SUPREME_SPELLS[currentRoundTimoState.baseElementId];
 
@@ -191,7 +192,7 @@ export default function RoundTable({ phase, groupSize = 6 }) {
           </div>
           <div>
             <span style={{ fontSize: '0.78rem', color: '#fdba74', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '2px' }}>
-              ULTIMATE DE LA RONDA ACTUAL:
+              ULTIMATE DE LA RONDA:
             </span>
             <strong style={{ fontSize: '1.35rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
               ⚡ {currentUltimateSpell?.name} 
